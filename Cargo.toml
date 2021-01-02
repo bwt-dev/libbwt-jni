@@ -27,8 +27,7 @@ signal-hook = [ "bwt/signal-hook" ]
 crate-type = [ "lib", "cdylib" ]
 
 [dependencies]
-bwt = { path = "../bwt", default-features = false }
-#bwt = { version = "0.2.0", default-features = false }
+bwt = { path = "./bwt", default-features = false }
 jni = "0.18.0"
 log = "0.4.11"
 serde_json = "1.0.59"
