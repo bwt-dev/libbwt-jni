@@ -2,7 +2,7 @@
 extern crate log;
 
 use std::sync::{mpsc, Once};
-use std::thread;
+use std::{any, panic, thread};
 
 use jni::objects::{GlobalRef, JClass, JObject, JString};
 use jni::sys::{jfloat, jint, jlong};
@@ -75,10 +75,12 @@ pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_start(
         Ok(())
     };
 
-    if let Err(e) = start() {
-        warn!("{:?}", e);
-        env.throw_new("dev/bwt/libbwt/BwtException", &fmt_error(&e))
-            .unwrap();
+    if let Err(e) = panic::catch_unwind(start)
+        .map_err(fmt_panic)
+        .and_then(|r| r.map_err(fmt_error))
+    {
+        warn!("{}", e);
+        env.throw_new("dev/bwt/libbwt/BwtException", &e).unwrap();
     }
 }
 
@@ -102,7 +104,10 @@ pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_testRpc(
 
     let test = || App::test_rpc(&serde_json::from_str(&json_config)?);
 
-    if let Err(e) = test() {
+    if let Err(e) = panic::catch_unwind(test)
+        .map_err(fmt_panic)
+        .and_then(|r| r.map_err(fmt_error))
+    {
         warn!("test rpc failed: {:?}", e);
         env.throw_new("dev/bwt/libbwt/BwtException", &e.to_string())
             .unwrap();
@@ -152,7 +157,20 @@ fn spawn_recv_progress_thread(
     handle
 }
 
-fn fmt_error(e: &Error) -> String {
+fn fmt_error(e: Error) -> String {
     let causes: Vec<String> = e.chain().map(|cause| cause.to_string()).collect();
     causes.join(": ")
+}
+
+fn fmt_panic(err: Box<dyn any::Any + Send + 'static>) -> String {
+    format!(
+        "panic: {}",
+        if let Some(s) = err.downcast_ref::<&str>() {
+            s
+        } else if let Some(s) = err.downcast_ref::<String>() {
+            s
+        } else {
+            "unknown panic"
+        }
+    )
 }
