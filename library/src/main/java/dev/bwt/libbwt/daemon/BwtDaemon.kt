@@ -3,35 +3,41 @@ package dev.bwt.libbwt.daemon
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import dev.bwt.libbwt.BwtException
 import java.util.*
 
 class BwtDaemon(
     var config: BwtConfig,
 ) {
     var started: Boolean = false
+    var ready: Boolean = false
     var terminate: Boolean = false
     var shutdownPtr: Long? = null
     var electrumAddr: String? = null
     var httpAddr: String? = null
 
     fun start(callback: ProgressNotifier) {
+        if (started) throw BwtException("daemon already started")
+        started = true
         Log.v("bwt-daemon","starting")
         val jsonConfig = Gson().toJson(config)
         NativeBwtDaemon.start(jsonConfig, object : CallbackNotifier {
-            override fun onBooting() {
+            override fun onBooting(shutdownPtr_: Long) {
                 Log.v("bwt-daemon", "booting")
+                shutdownPtr = shutdownPtr_
                 if (!terminate) callback.onBooting()
+                else shutdown()
             }
 
             override fun onSyncProgress(progress: Float, tipUnix: Int) {
                 val tipDate = Date(tipUnix.toLong() * 1000)
                 Log.v("bwt-daemon", "sync progress ${progress * 100}%")
-                if (!started && !terminate) callback.onSyncProgress(progress, tipDate)
+                if (!ready && !terminate) callback.onSyncProgress(progress, tipDate)
             }
 
             override fun onScanProgress(progress: Float, eta: Int) {
                 Log.v("bwt-daemon", "scan progress ${progress * 100}%")
-                if (!started && !terminate) callback.onScanProgress(progress, eta)
+                if (!ready && !terminate) callback.onScanProgress(progress, eta)
             }
 
             override fun onElectrumReady(addr: String) {
@@ -44,24 +50,22 @@ class BwtDaemon(
                 httpAddr = addr
             }
 
-            override fun onReady(shutdownPtr_: Long) {
+            override fun onReady() {
                 Log.v("bwt-daemon", "bwt is ready")
-                started = true
-                shutdownPtr = shutdownPtr_
-                if (!terminate) callback.onReady(this@BwtDaemon)
-                else shutdown()
+                ready = true
+                if (!terminate) callback.onReady()
             }
         })
     }
 
     fun shutdown() {
         Log.v("bwt-daemon","shutdown $shutdownPtr")
-        if (shutdownPtr != null) {
-            NativeBwtDaemon.shutdown(shutdownPtr!!)
+        // If we don't have the shutdownPtr yet, this will mark the daemon for later termination
+        terminate = true
+
+        shutdownPtr?.let { ptr ->
             shutdownPtr = null
-        } else {
-            // We cannot shutdown yet, mark the daemon for termination when it becomes possible
-            terminate = true
+            NativeBwtDaemon.shutdown(ptr)
         }
     }
 }
@@ -70,7 +74,7 @@ interface ProgressNotifier {
     fun onBooting() {};
     fun onSyncProgress(progress: Float, tip: Date) {};
     fun onScanProgress(progress: Float, eta: Int) {};
-    fun onReady(bwt: BwtDaemon) {};
+    fun onReady() {};
 }
 
 data class BwtConfig(
