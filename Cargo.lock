@@ -216,7 +216,6 @@ dependencies = [
  "bitcoincore-rpc",
  "chrono",
  "dirs",
- "jni",
  "lazy_static",
  "log 0.4.11",
  "miniscript",
