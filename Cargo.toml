@@ -24,7 +24,7 @@ dirs = [ "bwt/dirs" ]
 signal-hook = [ "bwt/signal-hook" ]
 
 [lib]
-crate-type = [ "lib", "cdylib" ]
+crate-type = [ "cdylib" ]
 
 [dependencies]
 bwt = { path = "./bwt", default-features = false }
