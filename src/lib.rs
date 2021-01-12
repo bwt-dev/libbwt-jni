@@ -99,23 +99,6 @@ pub unsafe extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_shutdow
     Box::from_raw(shutdown_ptr as *mut ShutdownHandler);
 }
 
-#[no_mangle]
-pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_testRpc(
-    env: JNIEnv,
-    _: JClass,
-    json_config: JString,
-) {
-    let json_config: String = env.get_string(json_config).unwrap().into();
-
-    let test = || App::test_rpc(&serde_json::from_str(&json_config)?);
-
-    if let Err(e) = try_run(test) {
-        warn!("test rpc failed: {:?}", e);
-        env.throw_new("dev/bwt/libbwt/BwtException", &e.to_string())
-            .unwrap();
-    }
-}
-
 impl ShutdownHandler {
     fn into_raw(self) -> *const ShutdownHandler {
         Box::into_raw(Box::new(self))
