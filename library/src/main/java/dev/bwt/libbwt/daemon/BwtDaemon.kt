@@ -1,6 +1,5 @@
 package dev.bwt.libbwt.daemon
 
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import dev.bwt.libbwt.BwtException
@@ -19,11 +18,9 @@ class BwtDaemon(
     fun start(callback: ProgressNotifier) {
         if (started) throw BwtException("daemon already started")
         started = true
-        Log.v("bwt-daemon","starting")
         val jsonConfig = Gson().toJson(config)
         NativeBwtDaemon.start(jsonConfig, object : CallbackNotifier {
             override fun onBooting(shutdownPtr_: Long) {
-                Log.v("bwt-daemon", "booting")
                 shutdownPtr = shutdownPtr_
                 if (!terminate) callback.onBooting()
                 else shutdown()
@@ -31,27 +28,22 @@ class BwtDaemon(
 
             override fun onSyncProgress(progress: Float, tipUnix: Int) {
                 val tipDate = Date(tipUnix.toLong() * 1000)
-                Log.v("bwt-daemon", "sync progress ${progress * 100}%")
                 if (!ready && !terminate) callback.onSyncProgress(progress, tipDate)
             }
 
             override fun onScanProgress(progress: Float, eta: Int) {
-                Log.v("bwt-daemon", "scan progress ${progress * 100}%")
                 if (!ready && !terminate) callback.onScanProgress(progress, eta)
             }
 
             override fun onElectrumReady(addr: String) {
-                Log.v("bwt-daemon", "electrum ready on $addr")
                 electrumAddr = addr
             }
 
             override fun onHttpReady(addr: String) {
-                Log.v("bwt-daemon", "http ready on $addr")
                 httpAddr = addr
             }
 
             override fun onReady() {
-                Log.v("bwt-daemon", "bwt is ready")
                 ready = true
                 if (!terminate) callback.onReady()
             }
@@ -59,7 +51,6 @@ class BwtDaemon(
     }
 
     fun shutdown() {
-        Log.v("bwt-daemon","shutdown $shutdownPtr")
         // If we don't have the shutdownPtr yet, this will mark the daemon for later termination
         terminate = true
 
