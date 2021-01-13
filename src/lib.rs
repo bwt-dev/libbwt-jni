@@ -172,6 +172,7 @@ fn make_shutdown_channel(
     // message to stop the progress recv thread, which will disconnect the
     // progress channel and stop the bwt start-up procedure.
     let shutdown_rx = on_oneshot_done(shutdown_rx, move || {
+        debug!("shutdown signal received");
         progress_tx.send(Progress::Done).ok();
     });
 
