@@ -75,6 +75,7 @@ data class BwtConfig(
     @SerializedName("bitcoind_dir") var bitcoindDir: String? = null,
     @SerializedName("bitcoind_cookie") var bitcoindCookie: String? = null,
     @SerializedName("bitcoind_wallet") var bitcoindWallet: String? = null,
+    @SerializedName("create_wallet_if_missing") var createWalletIfMissing: Boolean? = null,
     @SerializedName("descriptors") var descriptors: Array<String>? = null,
     @SerializedName("xpubs") var xpubs: Array<String>? = null,
     @SerializedName("rescan_since") var rescanSince: Int? = null,
