@@ -75,6 +75,9 @@ implementation for example usage.
 For the full list of available configuration options, refer to the
 [`libbwt` C FFI docs](https://github.com/bwt-dev/libbwt#config-options).
 
+The API servers are unauthenticated by default, but
+[authentication can be enabled](https://github.com/bwt-dev/bwt/blob/master/doc/auth.md).
+
 Note that if you call `shutdown()` while bitcoind is importing/rescanning addresses, the daemon will
 not stop immediately but will be marked for later termination.
 

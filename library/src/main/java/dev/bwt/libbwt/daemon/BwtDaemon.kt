@@ -12,6 +12,7 @@ class BwtDaemon(
     var ready: Boolean = false
     var terminate: Boolean = false
     var shutdownPtr: Long? = null
+    var accessToken: String? = null
     var electrumAddr: String? = null
     var httpAddr: String? = null
 
@@ -33,6 +34,10 @@ class BwtDaemon(
 
             override fun onScanProgress(progress: Float, eta: Int) {
                 if (!ready && !terminate) callback.onScanProgress(progress, eta)
+            }
+
+            override fun onAccessToken(token: String) {
+                accessToken = token
             }
 
             override fun onElectrumReady(addr: String) {

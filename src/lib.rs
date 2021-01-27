@@ -9,8 +9,8 @@ use jni::sys::{jfloat, jint, jlong};
 use jni::{JNIEnv, JavaVM};
 
 use bwt::error::{BwtError, Context, Error, Result};
-use bwt::util::{bitcoincore_wait::Progress, on_oneshot_done};
-use bwt::{App, Config};
+use bwt::util::on_oneshot_done;
+use bwt::{App, Config, Progress};
 
 static INIT_LOGGER: Once = Once::new();
 
@@ -33,6 +33,7 @@ pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_start(
         let config: Config = serde_json::from_str(&json_config).context("Invalid config")?;
         // The verbosity level cannot be changed once enabled.
         INIT_LOGGER.call_once(|| config.setup_logger());
+        let is_ephemeral_auth = config.auth_ephemeral;
 
         // Spawn background thread to emit syncing/scanning progress updates
         let (progress_tx, progress_rx) = mpsc::channel();
@@ -49,6 +50,20 @@ pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_start(
 
         if shutdown_rx.try_recv() != Err(mpsc::TryRecvError::Empty) {
             return Err(BwtError::Canceled.into());
+        }
+
+        if is_ephemeral_auth {
+            let access_token = env
+                .new_string(app.access_token().unwrap())
+                .unwrap()
+                .into_inner();
+            env.call_method(
+                callback,
+                "onAccessToken",
+                "(Ljava/lang/String;)V",
+                &[access_token.into()],
+            )
+            .unwrap();
         }
 
         #[cfg(feature = "electrum")]
@@ -76,7 +91,7 @@ pub extern "system" fn Java_dev_bwt_libbwt_daemon_NativeBwtDaemon_start(
 
         env.call_method(callback, "onReady", "()V", &[]).unwrap();
 
-        app.sync(Some(shutdown_rx));
+        app.sync_loop(Some(shutdown_rx));
 
         Ok(())
     };
@@ -131,25 +146,25 @@ fn spawn_recv_progress_thread(
         let env = jvm.attach_current_thread().unwrap();
         loop {
             match progress_rx.recv() {
-                Ok(Progress::Sync { progress_n, tip }) => {
-                    let progress_n = progress_n as jfloat;
+                Ok(Progress::Sync { progress_f, tip }) => {
+                    let progress_f = progress_f as jfloat;
                     let tip = tip as jint;
                     env.call_method(
                         &callback,
                         "onSyncProgress",
                         "(FI)V",
-                        &[progress_n.into(), tip.into()],
+                        &[progress_f.into(), tip.into()],
                     )
                     .unwrap();
                 }
-                Ok(Progress::Scan { progress_n, eta }) => {
-                    let progress_n = progress_n as jfloat;
+                Ok(Progress::Scan { progress_f, eta }) => {
+                    let progress_f = progress_f as jfloat;
                     let eta = eta as jint;
                     env.call_method(
                         &callback,
                         "onScanProgress",
                         "(FI)V",
-                        &[progress_n.into(), eta.into()],
+                        &[progress_f.into(), eta.into()],
                     )
                     .unwrap();
                 }
