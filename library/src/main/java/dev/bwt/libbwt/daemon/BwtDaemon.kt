@@ -98,4 +98,7 @@ data class BwtConfig(
     @SerializedName("require_addresses") var requireAddresses: Boolean? = null,
     @SerializedName("setup_logger") var setupLogger: Boolean? = null,
     @SerializedName("force_rescan") var forceRescan: Boolean? = null,
+    @SerializedName("auth_cookie") var authCookie: String? = null,
+    @SerializedName("auth_token") var authToken: String? = null,
+    @SerializedName("auth_ephemeral") var authEphemeral: Boolean? = null,
 ) {}
