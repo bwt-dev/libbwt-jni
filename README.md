@@ -18,7 +18,7 @@ Support development: [⛓️ on-chain or ⚡ lightning via BTCPay](https://btcpa
 
 - [Usage](#usage)
 - [Installation](#installation)
-  - [AAR](#android-aar-with-kotlin) (for Android/Kotlin)
+  - [AAR](#aar-for-androidkotlin) (for Android/Kotlin)
   - [Manual](#manual-installation-non-android-or-without-kotlin) (non-Android or without Kotlin)
   - [Electrum only](#electrum-only-variant)
   - [Verifying the signature](#verifying-the-signature)
