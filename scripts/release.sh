@@ -73,10 +73,9 @@ if [[ -z "$SKIP_UPLOAD" && -n "$GH_TOKEN" ]]; then
   gh_auth="Authorization: token $GH_TOKEN"
   gh_base=https://api.github.com/repos/$gh_repo
 
-  # TODO might not start this soon
+  sleep 3 # allow some time for the job to show up on travis
   travis_job=$(curl -s "https://api.travis-ci.org/v3/repo/${gh_repo/\//%2F}/branch/v$version" | jq -r '.last_build.id // ""')
 
-  # TODO github tag might not be available
   release_text="### Changelog"$'\n'$'\n'$changelog$'\n'$'\n'$(sed "s/VERSION/$version/g; s/TRAVIS_JOB/$travis_job/g;" scripts/release-footer.md)
   release_opt=$(jq -n --arg version v$version --arg text "$release_text" \
     '{ tag_name: $version, name: $version, body: $text, draft:true }')
