@@ -1,6 +1,6 @@
 [package]
 name = "bwt-jni"
-version = "0.2.3"
+version = "0.2.4"
 description = "JNI bindings for Bitcoin Wallet Tracker"
 authors = ["Nadav Ivgi <nadav@shesek.info>"]
 license = "MIT"
